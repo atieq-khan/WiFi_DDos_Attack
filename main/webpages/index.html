@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>WIFI Lists</h1>
+<div id="wifiList">Loading...</div>
+<button onclick="refreshWiFiList()">Refresh</button>
+
+<div id="attack">
+  <input type="text" id="bssid" placeholder="Enter a BSSID">
+  <input type="number" id="channel" placeholder="Enter a channel">
+  <button onclick="startAttack()">Start Attack</button>
+</div>
+
+<script>
+function updateWiFiListDisplay() {
+    // Create a new XMLHttpRequest
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/display', true);
+    xhr.onload = function() {
+        // Update the page content with the fetched data
+        document.getElementById('wifiList').innerHTML = xhr.responseText;
+    };
+    xhr.send();
+}
+
+function refreshWiFiList() {
+    // Trigger a Wi-Fi scan
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/trigger-scan', true);
+    xhr.onload = function() {
+        // Once the scan is triggered, update the displayed Wi-Fi list
+        updateWiFiListDisplay();
+    };
+    xhr.send();
+}
+
+function startAttack() {
+    var inputValue = document.getElementById("bssid").value;
+    var inputValue1 = document.getElementById("channel").value;
+
+    // Display the message and "Stop Attack" button
+    document.getElementById("attack").innerHTML = "The attack has started... <button onclick='stopAttack()'>Stop Attack</button>";
+
+    // Using AJAX to send the data to ESP32
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/received', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send('bssid=' + encodeURIComponent(inputValue) + '&' + 'channel=' + encodeURIComponent(inputValue1));
+}
+
+function stopAttack() {
+    var flag=1;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/received', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.send('stop_flag=1');
+    // Display the original input fields and "Start Attack" button
+    document.getElementById("attack").innerHTML = `
+        <input type="text" id="bssid" placeholder="Enter a BSSID">
+        <input type="number" id="channel" placeholder="Enter a channel">
+        <button onclick="startAttack()">Start Attack</button>
+    `;
+
+}
+
+// Fetch the Wi-Fi list every 10 seconds
+setInterval(updateWiFiListDisplay, 5000);
+
+// Initial fetch
+updateWiFiListDisplay();
+</script>
+
+</body>
+</html>
